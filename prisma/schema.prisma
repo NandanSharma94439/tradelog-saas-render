@@ -1,0 +1,121 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id              String         @id @default(uuid())
+  email           String         @unique
+  passwordHash    String
+  name            String
+  avatar          String?
+  currency        String         @default("INR")
+  timezone        String         @default("Asia/Kolkata")
+  defaultRiskPct  Float          @default(1.0)
+  defaultAsset    String         @default("Stock")
+  defaultQuantity Float          @default(100)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  trades          Trade[]
+  goals           TradingGoal[]
+  setups          Setup[]
+  subscription    Subscription?
+}
+
+model Trade {
+  id               String            @id @default(uuid())
+  userId           String
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol           String
+  assetType        String            // Stock, Index, Forex, Crypto, Commodity, Other
+  direction        String            // Long, Short
+  entryPrice       Float
+  exitPrice        Float?
+  quantity         Float
+  stopLoss         Float
+  takeProfit       Float
+  fees             Float             @default(0)
+  currency         String            @default("INR")
+  tradeDate        String            // YYYY-MM-DD
+  tradeTime        String?           // HH:MM
+  status           String            @default("Closed") // Open, Closed
+  setupId          String?
+  setupName        String?
+  reason           String?
+  beforeEmotion    String?           // Calm, Confident, Fearful, FOMO, Angry, Excited, Neutral
+  duringEmotion    String?
+  afterEmotion     String?
+  confidence       Int               @default(5)
+  discipline       Int               @default(5)
+  stress           Int               @default(5)
+  pnl              Float             @default(0)
+  riskAmount       Float             @default(0)
+  rewardAmount     Float             @default(0)
+  riskRewardRatio  Float             @default(0)
+  rMultiple        Float             @default(0)
+  returnPercentage Float             @default(0)
+  reviewWentWell   String?
+  reviewWentWrong  String?
+  lessonLearned    String?
+  mistakes         TradeMistake[]
+  screenshots      TradeScreenshot[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model TradeScreenshot {
+  id        String   @id @default(uuid())
+  tradeId   String
+  trade     Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  type      String   // before, during, after
+  url       String
+  caption   String?
+  createdAt DateTime @default(now())
+}
+
+model TradeMistake {
+  id        String   @id @default(uuid())
+  tradeId   String
+  trade     Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  mistake   String
+}
+
+model Setup {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+model TradingGoal {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  targetValue Float
+  currentVal  Float    @default(0)
+  unit        String   @default("trades")
+  deadline    String?
+  status      String   @default("In Progress")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Subscription {
+  userId                 String    @id
+  user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                   String    @default("FREE")
+  status                 String    @default("ACTIVE")
+  startDate              DateTime  @default(now())
+  endDate                DateTime?
+  provider               String?
+  providerCustomerId     String?
+  providerSubscriptionId String?
+}
